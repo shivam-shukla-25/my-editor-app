@@ -73,8 +73,7 @@ npm run build
 # Start production server
 npm run start
 ```
-
-When deploying to **Vercel**, ensure `.next` is in your `.gitignore`.
+ deployed on **Vercel**,  https://my-editor-app-4s9w.vercel.app/
 
 ---
 
