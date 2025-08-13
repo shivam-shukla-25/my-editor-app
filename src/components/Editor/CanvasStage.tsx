@@ -9,9 +9,10 @@ const CanvasStage: React.FC<{
   dispatch: any;
   resetLocalStorage: any;
 }> = ({ editorState, dispatch, resetLocalStorage }) => {
-  const [bgImage, setBgImage] = useState("");
+  const [bgImage, setBgImage] = useState<string>("");
   const bg = editorState.background || bgImage;
-  const [img] = useImage(bg?.src ?? "");
+  const imageSrc = typeof bg === "string" ? bg : bg?.src ?? "";
+  const [img] = useImage(imageSrc);
   const stageRef = useRef<any>(null);
 
   useEffect(() => {
@@ -25,7 +26,11 @@ const CanvasStage: React.FC<{
       const saved = localStorage.getItem("itc_state");
       if (saved) {
         const parsed: EditorState = JSON.parse(saved);
-        setBgImage(parsed.background);
+        setBgImage(
+          typeof parsed.background === "string"
+            ? parsed.background
+            : parsed.background?.src ?? ""
+        );
         dispatch({ type: "SET_EDITOR_STATE", payload: parsed });
       }
     } catch (err) {
@@ -36,11 +41,16 @@ const CanvasStage: React.FC<{
   // Scale stage to fit container but keep logical coordinates
   const containerWidth = 900;
   const containerHeight = 600;
-  const displayScale = bg
+  const isBgObject = (
+    bg: typeof editorState.background | string
+  ): bg is { src: string; width: number; height: number } =>
+    typeof bg !== "string" && bg !== null;
+
+  const displayScale = isBgObject(bg)
     ? Math.min(containerWidth / bg.width, containerHeight / bg.height)
     : 1;
-  const stageWidth = bg ? bg.width * displayScale : 800;
-  const stageHeight = bg ? bg.height * displayScale : 600;
+  const stageWidth = isBgObject(bg) ? bg.width * displayScale : 800;
+  const stageHeight = isBgObject(bg) ? bg.height * displayScale : 600;
 
   useEffect(() => {
     if (stageRef.current && bg) {
@@ -73,7 +83,7 @@ const CanvasStage: React.FC<{
       >
         <Stage ref={stageRef} width={stageWidth} height={stageHeight}>
           <Layer>
-            {img && bg && (
+            {img && isBgObject(bg) && (
               <KImage
                 image={img}
                 x={0}

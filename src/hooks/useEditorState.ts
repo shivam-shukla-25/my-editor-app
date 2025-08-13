@@ -114,13 +114,11 @@ function editorReducer(state: History, action: Action): History {
         future: future.slice(1),
       };
     case "SET_TEXT_LAYER":
-      return {
-        ...state,
-        present: {
-          ...state.present,
-          textLayers: action.payload,
-        },
-      };
+      return push({
+        ...present,
+        textLayers: [...present.textLayers, action.payload],
+      });
+
     case "RESET":
       return { past: [], present: initialState, future: [] };
     default:
@@ -143,7 +141,8 @@ export function useEditorState() {
     dispatch({ type: "RESET" });
   }, []);
   const setTextLayer = useCallback(
-    (textLayer) => dispatch({ type: "SET_TEXT_LAYER", payload: textLayer }),
+    (textLayer: any) =>
+      dispatch({ type: "SET_TEXT_LAYER", payload: textLayer }),
     []
   );
 
