@@ -14,10 +14,10 @@ const Home: React.FC = () => {
   }, [history.present]);
 
   useEffect(() => {
-    const textLayer = JSON.parse(localStorage.getItem("textLayers"));
+    const savedTextLayer = localStorage.getItem("textLayers");
+    const textLayer = savedTextLayer ? JSON.parse(savedTextLayer) : null;
     if (textLayer) {
-      console.log(textLayer, "textLayer3");
-      setTextLayer(textLayer); // ✅ update history.present.textLayer
+      setTextLayer(textLayer);
     }
   }, [setTextLayer]);
 
