@@ -9,43 +9,65 @@ const CanvasStage: React.FC<{
   dispatch: any;
   resetLocalStorage: any;
 }> = ({ editorState, dispatch, resetLocalStorage }) => {
-  const [bgImage, setBgImage] = useState<string>("");
-  const bg = editorState.background || bgImage;
-  const imageSrc = typeof bg === "string" ? bg : bg?.src ?? "";
-  const [img] = useImage(imageSrc);
   const stageRef = useRef<any>(null);
 
+  // This will be the fallback if editorState.background is not set yet
+  const [bgImage, setBgImage] = useState<{
+    src: string;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  // Always prefer background from state, otherwise use local fallback
+  const bg = editorState.background || bgImage;
+  const imageSrc = bg?.src ?? "";
+  const [img] = useImage(imageSrc);
+
+  // Type guard for background object
+  const isBgObject = (
+    bg: typeof editorState.background | null
+  ): bg is { src: string; width: number; height: number } =>
+    typeof bg === "object" && bg !== null && typeof bg.src === "string";
+
+  // When reset is triggered
   useEffect(() => {
     if (resetLocalStorage) {
-      setBgImage("");
+      setBgImage(null);
     }
   }, [resetLocalStorage]);
 
+  // Restore from localStorage and normalize to object format
   useEffect(() => {
     try {
       const saved = localStorage.getItem("itc_state");
       if (saved) {
         const parsed: EditorState = JSON.parse(saved);
-        setBgImage(
-          typeof parsed.background === "string"
-            ? parsed.background
-            : parsed.background?.src ?? ""
-        );
-        dispatch({ type: "SET_EDITOR_STATE", payload: parsed });
+
+        let normalizedBg = null;
+        if (typeof parsed.background === "string") {
+          // If saved as a string, convert to object with default size until loaded
+          normalizedBg = { src: parsed.background, width: 800, height: 600 };
+        } else if (parsed.background && parsed.background.src) {
+          normalizedBg = parsed.background;
+        }
+
+        setBgImage(normalizedBg);
+        dispatch({
+          type: "SET_EDITOR_STATE",
+          payload: {
+            ...parsed,
+            background: normalizedBg,
+          },
+        });
       }
     } catch (err) {
       console.error("Failed to restore editor state:", err);
     }
   }, [dispatch]);
 
-  // Scale stage to fit container but keep logical coordinates
+  // Scale stage to fit container
   const containerWidth = 900;
   const containerHeight = 600;
-  const isBgObject = (
-    bg: typeof editorState.background | string
-  ): bg is { src: string; width: number; height: number } =>
-    typeof bg !== "string" && bg !== null;
-
   const displayScale = isBgObject(bg)
     ? Math.min(containerWidth / bg.width, containerHeight / bg.height)
     : 1;
@@ -53,7 +75,7 @@ const CanvasStage: React.FC<{
   const stageHeight = isBgObject(bg) ? bg.height * displayScale : 600;
 
   useEffect(() => {
-    if (stageRef.current && bg) {
+    if (stageRef.current && isBgObject(bg)) {
       stageRef.current.width(stageWidth);
       stageRef.current.height(stageHeight);
       stageRef.current.scale({ x: displayScale, y: displayScale });
@@ -99,7 +121,6 @@ const CanvasStage: React.FC<{
         </Stage>
       </div>
 
-      {/* Export button (NEW) */}
       <button
         onClick={handleExport}
         style={{

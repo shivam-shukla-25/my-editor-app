@@ -118,7 +118,7 @@ const Home: React.FC = () => {
                   className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition"
                 >
                   <span className="text-sm text-gray-800 truncate max-w-[120px]">
-                    {t.text.slice(0, 20) || "Text"}
+                    {t?.text?.slice(0, 20) || "Text"}
                   </span>
                   <button
                     onClick={() =>

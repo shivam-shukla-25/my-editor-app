@@ -49,7 +49,7 @@ type Action =
   | { type: "UNDO" }
   | { type: "REDO" }
   | { type: "RESET" }
-  | { type: "SET_TEXT_LAYER"; payload: TextLayer };
+  | { type: "SET_TEXT_LAYERS"; payload: TextLayer };
 
 function editorReducer(state: History, action: Action): History {
   const { past, present, future } = state;
@@ -113,11 +113,16 @@ function editorReducer(state: History, action: Action): History {
         present: next,
         future: future.slice(1),
       };
-    case "SET_TEXT_LAYER":
-      return push({
-        ...present,
-        textLayers: [...present.textLayers, action.payload],
-      });
+    case "SET_TEXT_LAYERS":
+      return {
+        ...state,
+        present: {
+          ...state.present,
+          textLayers: Array.isArray(action.payload)
+            ? action.payload
+            : [action.payload],
+        },
+      };
 
     case "RESET":
       return { past: [], present: initialState, future: [] };
@@ -142,7 +147,7 @@ export function useEditorState() {
   }, []);
   const setTextLayer = useCallback(
     (textLayer: any) =>
-      dispatch({ type: "SET_TEXT_LAYER", payload: textLayer }),
+      dispatch({ type: "SET_TEXT_LAYERS", payload: textLayer }),
     []
   );
 
